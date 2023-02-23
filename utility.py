@@ -13,6 +13,33 @@ import matplotlib.pyplot as plt
 
 import copy
 
+import pickle
+
+def save_results(model_name:str,results:dict,best_indexes:dict,fitted_models:dict):
+    
+    with open(model_name+"/results.pkl", 'wb') as out:
+        pickle.dump(results, out, pickle.HIGHEST_PROTOCOL)
+    
+    with open(model_name+"/best_indexes.pkl", 'wb') as out:
+        pickle.dump(best_indexes, out, pickle.HIGHEST_PROTOCOL)
+            
+    with open(model_name+"/fitted_models.pkl", 'wb') as out:
+        pickle.dump(fitted_models, out, pickle.HIGHEST_PROTOCOL)
+        
+def load_results(model_name:str):
+    
+    with open(model_name+"/results.pkl", 'rb') as inp:
+        results=pickle.load(inp)
+    
+    with open(model_name+"/best_indexes.pkl", 'rb') as inp:
+        best_indexes=pickle.load(inp)
+            
+    with open(model_name+"/fitted_models.pkl", 'rb') as inp:
+        fitted_models=pickle.load(inp)
+        
+    return results,best_indexes,fitted_models
+    
+
 def load_PCA_dfs(n:int)->Tuple[dict,pd.Series]:
     
     y = pd.read_parquet('dataset/y.parquet').squeeze()
