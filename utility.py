@@ -11,13 +11,15 @@ import pandas as pd
 import random
 import matplotlib.pyplot as plt
 
+import copy
+
 def load_PCA_dfs(n:int)->Tuple[dict,pd.Series]:
     
     y = pd.read_parquet('dataset/y.parquet').squeeze()
     
     dfs={}
     
-    for i in tqdm(range(2,n+1,20)):
+    for i in tqdm(range(2,n+1,10)):
         
         dfs[i]=pd.read_parquet("dataset/PCA_"+str(i)+".parquet")
         
@@ -60,28 +62,29 @@ def hyperparameter_tuning(desc:str,
 def get_results(dfs:dict,
                 y:pd.Series,
                 estimator:Union[Type[ClusterMixin],Type[BaseEstimator]],
+                return_all_fitted:bool,
                 hyperparameter_name:str,
                 hyperparameter_values:List[float]) -> Tuple[dict,dict,Union[Type[ClusterMixin],Type[BaseEstimator]]]:
     
     results={}
     best_indexes={}
+    fitted_estimators={}
 
     #dfs.keys()
     
-    for dim in tqdm([2],desc="Total result"):
+    for dim in tqdm(dfs.keys(),desc="Total result"):
         
-        get_estimator = dim==2
+        get_estimator = (dim==2) or (return_all_fitted)
         
-        results[dim],best_indexes[dim],_=hyperparameter_tuning("PCA_"+str(dim),
-                                                               estimator,hyperparameter_name,
-                                                               hyperparameter_values,
-                                                               dfs[dim], y,
-                                                               get_estimator)
+        results[dim],best_indexes[dim],fitted_estimator=hyperparameter_tuning("PCA_"+str(dim),
+                                                                            estimator,hyperparameter_name,
+                                                                            hyperparameter_values,
+                                                                            dfs[dim], y,
+                                                                            get_estimator)
+        if (dim==2) or (return_all_fitted):
+            fitted_estimators[dim]=copy.deepcopy(fitted_estimator)
         
-        if get_estimator:                                                               
-            estimator2D=_
-        
-    return results, best_indexes, estimator2D
+    return results, best_indexes, fitted_estimators
 
 def plot_clustering(X, labels, cluster_centers=None):
 
@@ -99,7 +102,7 @@ def plot_clustering(X, labels, cluster_centers=None):
         
         plt.scatter(X[my_members]["PC_1"], X[my_members]["PC_2"], marker=markers[k%len(markers)], color=col)
         
-        if cluster_centers:
+        if cluster_centers is not None:
             cluster_center = cluster_centers[k]
             plt.scatter(cluster_center[0],cluster_center[1],marker=markers[k%len(markers)], edgecolor="black", s=150, color =col)
         
